@@ -224,6 +224,7 @@ func deploy(packageName string, repositoryName string, repositoryURL string, log
 		fmt.Fprintf(log, format+"\n", v...)
 	})
 	client := action.NewUpgrade(actionConfig)
+	client.Namespace = settings.Namespace()
 	chartPath, err := client.LocateChart(repositoryName+"/"+packageName, settings)
 	if err != nil {
 		return nil, err
