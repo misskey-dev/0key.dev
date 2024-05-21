@@ -32,7 +32,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4.1.6
       with:
-        submodules: recursive
+        submodules: true
     - uses: docker/login-action@v3.1.0
       with:
         registry: ghcr.io
@@ -40,15 +40,15 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - uses: Homebrew/actions/setup-homebrew@master
     - run: |
+        sha=$(git rev-parse HEAD)
+        repository=$(mktemp -d)
+        cd $repository
+        git init
+        git remote add origin https://github.com/misskey-dev/misskey.git
+        git fetch --depth=1 origin $sha
+        git checkout FETCH_HEAD
         brew install jaq
         jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json
-      working-directory: misskey/misskey
-    - run: |
-        rm -rf **/.git
-    - run: |
-        dockerfile=$(mktemp)
-        grep -v 'RUN git submodule update --init' Dockerfile > $dockerfile
-        mv -f $dockerfile Dockerfile
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
       working-directory: misskey/misskey
