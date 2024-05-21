@@ -13,6 +13,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-playground/webhooks/v6/github"
 	"github.com/spf13/cobra"
+	"helm.sh/helm/pkg/storage/driver"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
@@ -223,6 +224,9 @@ func deploy(packageName string, repositoryName string, repositoryURL string, log
 	actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "configmap", func(format string, v ...interface{}) {
 		fmt.Fprintf(log, format+"\n", v...)
 	})
+	if _, ok := actionConfig.Releases.Driver.(*driver.Memory); ok {
+		return nil, fmt.Errorf("storage driver could not be initialized")
+	}
 	client := action.NewUpgrade(actionConfig)
 	client.Namespace = settings.Namespace()
 	chartPath, err := client.LocateChart(repositoryName+"/"+packageName, settings)
