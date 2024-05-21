@@ -184,6 +184,7 @@ func Execute() {
 }
 
 func deploy(packageName string, repositoryName string, repositoryURL string, log io.Writer) (*release.Release, error) {
+	settings.SetNamespace("misskey")
 	p := getter.All(settings)
 	c := repo.Entry{
 		Name: repositoryName,
