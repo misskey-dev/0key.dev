@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -110,14 +113,15 @@ func newCmd() *cobra.Command {
 							},
 						},
 					}, nil)
-					release, err := deploy(packageName, repositoryName, repositoryURL)
+					b := new(bytes.Buffer)
+					release, err := deploy(packageName, repositoryName, repositoryURL, b)
 					if err != nil {
 						discord(&discordgo.WebhookParams{
 							Embeds: []*discordgo.MessageEmbed{
 								{
 									Title:       "Deployment failed",
 									Color:       ColorFailure,
-									Description: err.Error(),
+									Description: err.Error() + "\n```" + b.String() + "```",
 								},
 							},
 						}, st)
@@ -126,8 +130,9 @@ func newCmd() *cobra.Command {
 					discord(&discordgo.WebhookParams{
 						Embeds: []*discordgo.MessageEmbed{
 							{
-								Title: "Deployment succeeded",
-								Color: ColorSuccess,
+								Title:       "Deployment succeeded",
+								Color:       ColorSuccess,
+								Description: "```" + b.String() + "```",
 								Fields: []*discordgo.MessageEmbedField{
 									{
 										Name:   "Name",
@@ -178,10 +183,8 @@ func Execute() {
 	}
 }
 
-func deploy(packageName string, repositoryName string, repositoryURL string) (*release.Release, error) {
+func deploy(packageName string, repositoryName string, repositoryURL string, log io.Writer) (*release.Release, error) {
 	p := getter.All(settings)
-	actionConfig := new(action.Configuration)
-	actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "", func(_ string, _ ...interface{}) {})
 	c := repo.Entry{
 		Name: repositoryName,
 		URL:  repositoryURL,
@@ -189,6 +192,9 @@ func deploy(packageName string, repositoryName string, repositoryURL string) (*r
 	r, err := repo.NewChartRepository(&c, p)
 	if err != nil {
 		return nil, err
+	}
+	if settings.RepositoryCache != "" {
+		r.CachePath = settings.RepositoryCache
 	}
 	index, err := r.DownloadIndexFile()
 	if err != nil {
@@ -210,6 +216,10 @@ func deploy(packageName string, repositoryName string, repositoryURL string) (*r
 	if _, err := repo.LoadIndexFile(index); err != nil {
 		return nil, err
 	}
+	actionConfig := new(action.Configuration)
+	actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "configmap", func(format string, v ...interface{}) {
+		fmt.Fprintf(log, format+"\n", v...)
+	})
 	client := action.NewUpgrade(actionConfig)
 	chartPath, err := client.LocateChart(repositoryName+"/"+packageName, settings)
 	if err != nil {
