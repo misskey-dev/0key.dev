@@ -47,8 +47,10 @@ jobs:
         mv misskey/misskey t
         git submodule deinit misskey/misskey
         mv t misskey/misskey
+    - run: |
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
+      working-directory: misskey/misskey
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
   helm-hariko:
