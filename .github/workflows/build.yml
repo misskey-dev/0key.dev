@@ -40,60 +40,32 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - uses: Homebrew/actions/setup-homebrew@master
     - run: |
-        sha=$(git rev-parse HEAD)
+        head=$(git rev-parse HEAD)
         repository=$(mktemp -d)
         cd $repository
         git init
         git remote add origin https://github.com/misskey-dev/misskey.git
-        git fetch --depth=1 origin $sha
+        git fetch --depth=1 origin $head
         git checkout FETCH_HEAD
         brew install jaq
         jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
-      working-directory: misskey/misskey
+      working-directory: misskey
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
-  helm-hariko:
+  helm:
     if: github.repository == 'misskey-dev/0key.dev'
     needs:
     - docker-hariko
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-    - uses: actions/checkout@v4.1.6
-    - run: |
-        git config user.name "$GITHUB_ACTOR"
-        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-    - uses: azure/setup-helm@v4.2.0
-      with:
-        version: v3.15.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - uses: mikefarah/yq@v4.44.1
-      with:
-        cmd: |
-          yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko\\"" hariko/chart/values.yaml
-      env:
-        GITHUB_REF_NAME: ${{ github.ref_name }}
-    - run: |
-        mv hariko/chart hariko-chart
-    - uses: helm/chart-releaser-action@v1.6.0
-      with:
-        charts_dir: "hariko-chart"
-      env:
-        CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  helm-misskey:
-    if: github.repository == 'misskey-dev/0key.dev'
-    needs:
     - docker-misskey
-    - helm-hariko
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
     - uses: actions/checkout@v4.1.6
+      with:
+        fetch-depth: 2
     - run: |
         git config user.name "$GITHUB_ACTOR"
         git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
@@ -105,13 +77,10 @@ jobs:
     - uses: mikefarah/yq@v4.44.1
       with:
         cmd: |
-          yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey\\"" misskey/chart/values.yaml
+          yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko\\"" charts/helm/values.yaml
+          yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey\\"" charts/misskey/values.yaml
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
-    - run: |
-        mv misskey/chart misskey-chart
     - uses: helm/chart-releaser-action@v1.6.0
-      with:
-        charts_dir: "misskey-chart"
       env:
         CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
