@@ -3,6 +3,7 @@ package cmd
 import (
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -202,6 +203,10 @@ func deploy(packageName string, repositoryName string, repositoryURL string) (*r
 		return nil, err
 	}
 	re.Update(&c)
+	err = os.MkdirAll(filepath.Dir(settings.RepositoryConfig), os.ModePerm)
+	if err != nil && !os.IsExist(err) {
+		return nil, err
+	}
 	if err := re.WriteFile(settings.RepositoryConfig, 0600); err != nil {
 		return nil, err
 	}
