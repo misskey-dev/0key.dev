@@ -77,9 +77,11 @@ jobs:
           yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko\\"" hariko/chart/values.yaml
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
+    - run: |
+        mv hariko/chart hariko-chart
     - uses: helm/chart-releaser-action@v1.6.0
       with:
-        charts_dir: "hariko/chart"
+        charts_dir: "hariko-chart"
       env:
         CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   helm-misskey:
@@ -106,8 +108,10 @@ jobs:
           yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey\\"" misskey/chart/values.yaml
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
+    - run: |
+        mv misskey/chart misskey-chart
     - uses: helm/chart-releaser-action@v1.6.0
       with:
-        charts_dir: "misskey/chart"
+        charts_dir: "misskey-chart"
       env:
         CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
