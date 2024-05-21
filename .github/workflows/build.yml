@@ -39,7 +39,14 @@ jobs:
     - uses: Homebrew/actions/setup-homebrew@master
     - run: |
         cd misskey
-        (brew install jaq; cd misskey; jaq --in-place ".version += \"-${${"$(git -P log --color=never --pretty=format:%d.%H | head -n1)":10}/,*)/}\"" package.json)
+        (
+          brew install jaq;
+          cd misskey;
+          version=$(git -P log --color=never --pretty=format:%d.%H | head -n1);
+          version=${version:10};
+          version=${version/,*)/};
+          jaq --in-place ".version += \"-$version" package.json
+        )
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
       env:
