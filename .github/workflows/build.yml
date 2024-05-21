@@ -19,9 +19,9 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - run: |
-        cd hariko
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko"
+      working-directory: hariko
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
   docker-misskey:
@@ -40,10 +40,11 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - uses: Homebrew/actions/setup-homebrew@master
     - run: |
-        cd misskey
-        (brew install jaq; cd misskey; jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json)
+        brew install jaq
+        jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
+      working-directory: misskey/misskey
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
   helm-hariko:
