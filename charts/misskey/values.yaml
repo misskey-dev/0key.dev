@@ -1,5 +1,5 @@
 image:
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 host: 0key.dev
 port: 3000
 environment: production
