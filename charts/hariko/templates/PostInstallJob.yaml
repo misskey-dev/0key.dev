@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}"
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-weight": "5"
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+    spec:
+      restartPolicy: Never
+      container:
+        - name: "{{ .Release.Name }}"
+          image: bash:5.2.26
+          imagePullPolicy: IfNotPresent
+          args:
+            - bash
+            - -c
+            - |-
+              curl -LSfs https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+              helm repo add misskey-dev https://misskey-dev.github.io/0key.dev/
+              helm repo update
+              helm install -n misskey misskey misskey-dev/misskey
+          volumeMounts:
+            - name: {{ include "hariko.name" . }}-pvc
+              mountPath: /root
+      volumes:
+        - name: {{ include "hariko.name" . }}-pvc
+          persistentVolumeClaim:
+            claimName: {{ include "hariko.name" . }}-pvc

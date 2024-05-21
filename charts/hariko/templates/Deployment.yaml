@@ -71,3 +71,10 @@ spec:
                 secretKeyRef:
                   name: hariko
                   key: repository-url
+          volumeMounts:
+            - name: {{ include "hariko.name" . }}-pvc
+              mountPath: /root
+      volumes:
+        - name: {{ include "hariko.name" . }}-pvc
+          persistentVolumeClaim:
+            claimName: {{ include "hariko.name" . }}-pvc
