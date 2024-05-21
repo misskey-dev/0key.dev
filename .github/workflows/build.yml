@@ -36,6 +36,7 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    - uses: Homebrew/actions/setup-homebrew@master
     - run: |
         cd misskey
         (brew install jaq; cd misskey; jaq --in-place ".version += \"-${${"$(git -P log --color=never --pretty=format:%d.%H | head -n1)":10}/,*)/}\"" package.json)
