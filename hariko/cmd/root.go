@@ -198,10 +198,8 @@ func deploy(packageName string, repositoryName string, repositoryURL string) (*r
 	if err != nil {
 		return nil, err
 	}
-	var re repo.File
-	if err := yaml.Unmarshal(b, &re); err != nil {
-		return nil, err
-	}
+	re := repo.NewFile()
+	yaml.Unmarshal(b, &re)
 	re.Update(&c)
 	err = os.MkdirAll(filepath.Dir(settings.RepositoryConfig), os.ModePerm)
 	if err != nil && !os.IsExist(err) {
