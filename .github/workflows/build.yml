@@ -24,7 +24,7 @@ jobs:
       run: |
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko"
-        echo "digest=$(docker image ls --format '{{.Digest}}')" > $GITHUB_OUTPUT
+        echo "digest=$(docker image ls --format '{{.Digest}}'  ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey)" > $GITHUB_OUTPUT
       working-directory: hariko
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
@@ -58,7 +58,7 @@ jobs:
         jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
-        echo "digest=$(docker image ls --format '{{.Digest}}')" > $GITHUB_OUTPUT
+        echo "digest=$(docker image ls --format '{{.Digest}}' ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey)" > $GITHUB_OUTPUT
       working-directory: misskey
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
