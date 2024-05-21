@@ -1,3 +1,3 @@
 image:
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 name: root
