@@ -27,6 +27,8 @@ spec:
             - "$(GITHUB_REPOSITORY)"
             - "-s"
             - "$(GITHUB_WEBHOOK_SECRET)"
+            - "-n"
+            - "$(NAMESPACE)"
             - "-p"
             - "$(PACKAGE_NAME)"
             - "-r"
@@ -56,6 +58,11 @@ spec:
                 secretKeyRef:
                   name: hariko
                   key: github-webhook-secret
+            - name: NAMESPACE
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: namespace
             - name: PACKAGE_NAME
               valueFrom:
                 secretKeyRef:

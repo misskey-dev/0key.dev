@@ -34,6 +34,7 @@ func newCmd() *cobra.Command {
 	var githubJobName string
 	var githubRepository string
 	var githubWebhookSecret string
+	var namespace string
 	var packageName string
 	var repositoryName string
 	var repositoryURL string
@@ -43,6 +44,7 @@ func newCmd() *cobra.Command {
 		Long:  "Hariko watches the GitHub repository and automatically deploys the application to the server.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			settings.SetNamespace(namespace)
 			hook, err := github.New(github.Options.Secret(githubWebhookSecret))
 			if err != nil {
 				return err
@@ -165,6 +167,7 @@ func newCmd() *cobra.Command {
 	f.StringVarP(&githubJobName, "github-job-name", "j", "", "Job name")
 	f.StringVarP(&githubRepository, "github-repository", "g", "", "Repository")
 	f.StringVarP(&githubWebhookSecret, "github-webhook-secret", "s", "", "GitHub webhook secret")
+	f.StringVarP(&namespace, "namespace", "n", "", "Namespace")
 	f.StringVarP(&packageName, "package-name", "p", "", "Package name")
 	f.StringVarP(&repositoryName, "repository-name", "r", "", "Repository name")
 	f.StringVarP(&repositoryURL, "repository-url", "u", "", "Repository URL")
@@ -184,7 +187,6 @@ func Execute() {
 }
 
 func deploy(packageName string, repositoryName string, repositoryURL string, log io.Writer) (*release.Release, error) {
-	settings.SetNamespace("misskey")
 	p := getter.All(settings)
 	c := repo.Entry{
 		Name: repositoryName,
