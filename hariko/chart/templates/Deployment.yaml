@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hariko.name" . }}-deployment
+  labels:
+    app: {{ include "hariko.name" . }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "hariko.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "hariko.name" . }}
+    spec:
+      containers:
+        - name: {{ include "hariko.name" . }}
+          image: "{{ .Values.image.index }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - "-w"
+            - "$DISCORD_WEBHOOK_ID_TOKEN"
+            - "-j"
+            - "$GITHUB_JOB_NAME"
+            - "-g"
+            - "$GITHUB_REPOSITORY"
+            - "-s"
+            - "$GITHUB_WEBHOOK_SECRET"
+            - "-p"
+            - "$PACKAGE_NAME"
+            - "-r"
+            - "$REPOSITORY_NAME"
+            - "-u"
+            - "$REPOSITORY_URL"
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DISCORD_WEBHOOK_ID_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: discord-webhook-id-token
+            - name: GITHUB_JOB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: github-job-name
+            - name: GITHUB_REPOSITORY
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: github-repository
+            - name: GITHUB_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: github-webhook-secret
+            - name: PACKAGE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: package-name
+            - name: REPOSITORY_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: repository-name
+            - name: REPOSITORY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: hariko
+                  key: repository-url

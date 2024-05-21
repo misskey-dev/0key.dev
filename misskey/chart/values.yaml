@@ -1,0 +1,19 @@
+image:
+  pullPolicy: IfNotPresent
+host: 0key.dev
+port: 3000
+environment: production
+postgresql:
+  host: postgresql-ha-pgpool
+  port: 5432
+  username: postgres
+redis:
+  host: redis-ha-haproxy
+  port: 6379
+  family: 0
+misskey:
+  id: aidx
+  proxyBypassHosts:
+    - challenges.cloudflare.com
+  proxyRemoteFiles: true
+  signToActivityPubGet: true

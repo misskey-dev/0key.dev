@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "misskey.name" . }}-configuration
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "-10"
+data:
+  default.yml: |-
+    {{- toYaml .Values.misskey | nindent 4 }}
+    url: https://{{ .Values.host }}/
+    port: {{ .Values.port }}
+    db:
+      host: {{ .Values.postgresql.host }}
+      port: {{ .Values.postgresql.port }}
+      user: {{ .Values.postgresql.username }}
+      pass: {{ .Values.postgresql.password }}
+      db: {{ .Values.postgresql.database }}
+    redis:
+      host: {{ .Values.redis.host }}
+      port: {{ .Values.redis.port }}
+      family: {{ .Values.redis.family }}
+      pass: {{ .Values.redis.password }}
+      prefix: {{ .Values.host }}

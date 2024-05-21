@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "misskey.name" . }}-deployment
+  labels:
+    app: {{ include "misskey.name" . }}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {{ include "misskey.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "misskey.name" . }}
+    spec:
+      initContainers:
+        - name: "{{ .Release.Name }}-init"
+          image: mikefarah/yq:4
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args: ["-c", "cp /mnt/misskey-configuration/default.yml /misskey/.config && /usr/bin/yq -i \".db.pass = \\\"$POSTGRESQL_PASS\\\"\" /misskey/.config/default.yml"]
+          env:
+            - name: POSTGRESQL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-ha-postgresql
+                  key: password
+          volumeMounts:
+            - name: {{ include "misskey.name" . }}-configuration-destination
+              mountPath: /misskey/.config
+            - name: {{ include "misskey.name" . }}-configuration
+              mountPath: /mnt/misskey-configuration
+              readOnly: true
+      containers:
+        - name: {{ include "misskey.name" . }}
+          image: "{{ .Values.image.index }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["pnpm", "run", "start"]
+          ports:
+            - containerPort: {{ .Values.port }}
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.environment }}
+          volumeMounts:
+            - name: {{ include "misskey.name" . }}-configuration-destination
+              mountPath: /misskey/.config
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.port }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.port }}
+            failureThreshold: 1
+            periodSeconds: 1
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.port }}
+            failureThreshold: 30
+            periodSeconds: 1
+      volumes:
+        - name: {{ include "misskey.name" . }}-configuration-destination
+          emptyDir: {}
+        - name: {{ include "misskey.name" . }}-configuration
+          configMap:
+            name: {{ include "misskey.name" . }}-configuration
