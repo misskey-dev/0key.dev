@@ -24,143 +24,146 @@ const (
 
 var settings = cli.New()
 
-var rootCmd = &cobra.Command{
-	Use:   "hariko",
-	Short: "CD bot for 0key.dev",
-	Long:  "Hariko watches the GitHub repository and automatically deploys the application to the server.",
-	Args:  cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		var discordWebhookIDToken string
-		var githubJobName string
-		var githubRepository string
-		var githubWebhookSecret string
-		var packageName string
-		var repositoryName string
-		var repositoryURL string
-		cmd.Flags().StringVarP(&discordWebhookIDToken, "discord-webhook-id-token", "w", "", "Discord webhook ID & token")
-		cmd.Flags().StringVarP(&githubJobName, "github-job-name", "j", "", "Job name")
-		cmd.Flags().StringVarP(&githubRepository, "github-repository", "g", "", "Repository")
-		cmd.Flags().StringVarP(&githubWebhookSecret, "github-webhook-secret", "s", "", "GitHub webhook secret")
-		cmd.Flags().StringVarP(&packageName, "package-name", "p", "", "Package name")
-		cmd.Flags().StringVarP(&repositoryName, "repository-name", "r", "", "Repository name")
-		cmd.Flags().StringVarP(&repositoryURL, "repository-url", "u", "", "Repository URL")
-		cmd.MarkFlagRequired("github-job-name")
-		cmd.MarkFlagRequired("github-repository")
-		cmd.MarkFlagRequired("package-name")
-		cmd.MarkFlagRequired("repository-name")
-		cmd.MarkFlagRequired("repository-url")
-		hook, err := github.New(github.Options.Secret(githubWebhookSecret))
-		if err != nil {
-			return err
-		}
-		discord := func(_ *discordgo.WebhookParams, _ *discordgo.Message) *discordgo.Message {
-			return nil
-		}
-		if discordWebhookIDToken != "" {
-			session, err := discordgo.New("")
+func newCmd() *cobra.Command {
+	var discordWebhookIDToken string
+	var githubJobName string
+	var githubRepository string
+	var githubWebhookSecret string
+	var packageName string
+	var repositoryName string
+	var repositoryURL string
+	var rootCmd = &cobra.Command{
+		Use:   "hariko",
+		Short: "CD bot for 0key.dev",
+		Long:  "Hariko watches the GitHub repository and automatically deploys the application to the server.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			hook, err := github.New(github.Options.Secret(githubWebhookSecret))
 			if err != nil {
 				return err
 			}
-			p := strings.Split(discordWebhookIDToken, "/")
-			discord = func(data *discordgo.WebhookParams, previous *discordgo.Message) *discordgo.Message {
-				if previous != nil {
-					st, err := session.WebhookMessageEdit(p[0], p[1], previous.ID, &discordgo.WebhookEdit{
-						Content:         &data.Content,
-						Components:      &data.Components,
-						Embeds:          &data.Embeds,
-						Files:           data.Files,
-						Attachments:     &data.Attachments,
-						AllowedMentions: data.AllowedMentions,
-					})
-					if err != nil {
-						return nil
-					}
-					return st
-				} else {
-					st, err := session.WebhookExecute(p[0], p[1], true, data)
-					if err != nil {
-						return nil
-					}
-					return st
-				}
+			discord := func(_ *discordgo.WebhookParams, _ *discordgo.Message) *discordgo.Message {
+				return nil
 			}
-		}
-		http.HandleFunc("/github", func(w http.ResponseWriter, r *http.Request) {
-			payload, err := hook.Parse(r, github.WorkflowJobEvent)
-			if err != nil {
-				if err == github.ErrEventNotFound {
-					return
-				}
-				return
-			}
-			switch payload := payload.(type) {
-			case github.WorkflowJobPayload:
-				if payload.Repository.FullName != githubRepository {
-					return
-				}
-				if payload.WorkflowJob.Name != githubJobName {
-					return
-				}
-				if payload.WorkflowJob.Status != "completed" {
-					return
-				}
-				if payload.WorkflowJob.Conclusion != "success" {
-					return
-				}
-				st := discord(&discordgo.WebhookParams{
-					Embeds: []*discordgo.MessageEmbed{
-						{
-							Title: "Deployment started",
-						},
-					},
-				}, nil)
-				release, err := deploy(packageName, repositoryName, repositoryURL)
+			if discordWebhookIDToken != "" {
+				session, err := discordgo.New("")
 				if err != nil {
+					return err
+				}
+				p := strings.Split(discordWebhookIDToken, "/")
+				discord = func(data *discordgo.WebhookParams, previous *discordgo.Message) *discordgo.Message {
+					if previous != nil {
+						st, err := session.WebhookMessageEdit(p[0], p[1], previous.ID, &discordgo.WebhookEdit{
+							Content:         &data.Content,
+							Components:      &data.Components,
+							Embeds:          &data.Embeds,
+							Files:           data.Files,
+							Attachments:     &data.Attachments,
+							AllowedMentions: data.AllowedMentions,
+						})
+						if err != nil {
+							return nil
+						}
+						return st
+					} else {
+						st, err := session.WebhookExecute(p[0], p[1], true, data)
+						if err != nil {
+							return nil
+						}
+						return st
+					}
+				}
+			}
+			http.HandleFunc("/github", func(w http.ResponseWriter, r *http.Request) {
+				payload, err := hook.Parse(r, github.WorkflowJobEvent)
+				if err != nil {
+					if err == github.ErrEventNotFound {
+						return
+					}
+					return
+				}
+				switch payload := payload.(type) {
+				case github.WorkflowJobPayload:
+					if payload.Repository.FullName != githubRepository {
+						return
+					}
+					if payload.WorkflowJob.Name != githubJobName {
+						return
+					}
+					if payload.WorkflowJob.Status != "completed" {
+						return
+					}
+					if payload.WorkflowJob.Conclusion != "success" {
+						return
+					}
+					st := discord(&discordgo.WebhookParams{
+						Embeds: []*discordgo.MessageEmbed{
+							{
+								Title: "Deployment started",
+							},
+						},
+					}, nil)
+					release, err := deploy(packageName, repositoryName, repositoryURL)
+					if err != nil {
+						discord(&discordgo.WebhookParams{
+							Embeds: []*discordgo.MessageEmbed{
+								{
+									Title:       "Deployment failed",
+									Color:       ColorFailure,
+									Description: err.Error(),
+								},
+							},
+						}, st)
+						return
+					}
 					discord(&discordgo.WebhookParams{
 						Embeds: []*discordgo.MessageEmbed{
 							{
-								Title:       "Deployment failed",
-								Color:       ColorFailure,
-								Description: err.Error(),
+								Title: "Deployment succeeded",
+								Color: ColorSuccess,
+								Fields: []*discordgo.MessageEmbedField{
+									{
+										Name:   "Name",
+										Value:  release.Name,
+										Inline: true,
+									},
+									{
+										Name:   "Namespace",
+										Value:  release.Namespace,
+										Inline: true,
+									},
+									{
+										Name:   "Revision",
+										Value:  strconv.Itoa(release.Version),
+										Inline: true,
+									},
+								},
 							},
 						},
 					}, st)
-					return
 				}
-				discord(&discordgo.WebhookParams{
-					Embeds: []*discordgo.MessageEmbed{
-						{
-							Title: "Deployment succeeded",
-							Color: ColorSuccess,
-							Fields: []*discordgo.MessageEmbedField{
-								{
-									Name:   "Name",
-									Value:  release.Name,
-									Inline: true,
-								},
-								{
-									Name:   "Namespace",
-									Value:  release.Namespace,
-									Inline: true,
-								},
-								{
-									Name:   "Revision",
-									Value:  strconv.Itoa(release.Version),
-									Inline: true,
-								},
-							},
-						},
-					},
-				}, st)
-
-			}
-		})
-		return http.ListenAndServe(":3000", nil)
-	},
+			})
+			return http.ListenAndServe(":3000", nil)
+		},
+	}
+	f := rootCmd.Flags()
+	f.StringVarP(&discordWebhookIDToken, "discord-webhook-id-token", "w", "", "Discord webhook ID & token")
+	f.StringVarP(&githubJobName, "github-job-name", "j", "", "Job name")
+	f.StringVarP(&githubRepository, "github-repository", "g", "", "Repository")
+	f.StringVarP(&githubWebhookSecret, "github-webhook-secret", "s", "", "GitHub webhook secret")
+	f.StringVarP(&packageName, "package-name", "p", "", "Package name")
+	f.StringVarP(&repositoryName, "repository-name", "r", "", "Repository name")
+	f.StringVarP(&repositoryURL, "repository-url", "u", "", "Repository URL")
+	rootCmd.MarkFlagRequired("github-job-name")
+	rootCmd.MarkFlagRequired("github-repository")
+	rootCmd.MarkFlagRequired("package-name")
+	rootCmd.MarkFlagRequired("repository-name")
+	rootCmd.MarkFlagRequired("repository-url")
+	return rootCmd
 }
 
 func Execute() {
-	err := rootCmd.Execute()
+	err := newCmd().Execute()
 	if err != nil {
 		os.Exit(1)
 	}
