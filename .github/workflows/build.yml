@@ -44,13 +44,12 @@ jobs:
         jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json
       working-directory: misskey/misskey
     - run: |
-        mv misskey/misskey t
+        mv misskey/misskey detach
         git submodule deinit misskey/misskey
-        mv t misskey/misskey
     - run: |
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
-      working-directory: misskey/misskey
+      working-directory: detach
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
   helm-hariko:
