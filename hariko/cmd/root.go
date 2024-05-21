@@ -31,7 +31,6 @@ var rootCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var discordWebhookIDToken string
-		var gitBranch string
 		var githubJobName string
 		var githubRepository string
 		var githubWebhookSecret string
