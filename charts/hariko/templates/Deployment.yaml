@@ -20,19 +20,19 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - "-w"
-            - "$DISCORD_WEBHOOK_ID_TOKEN"
+            - "$(DISCORD_WEBHOOK_ID_TOKEN)"
             - "-j"
-            - "$GITHUB_JOB_NAME"
+            - "$(GITHUB_JOB_NAME)"
             - "-g"
-            - "$GITHUB_REPOSITORY"
+            - "$(GITHUB_REPOSITORY)"
             - "-s"
-            - "$GITHUB_WEBHOOK_SECRET"
+            - "$(GITHUB_WEBHOOK_SECRET)"
             - "-p"
-            - "$PACKAGE_NAME"
+            - "$(PACKAGE_NAME)"
             - "-r"
-            - "$REPOSITORY_NAME"
+            - "$(REPOSITORY_NAME)"
             - "-u"
-            - "$REPOSITORY_URL"
+            - "$(REPOSITORY_URL)"
           ports:
             - containerPort: 3000
           env:
