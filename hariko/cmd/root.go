@@ -15,6 +15,7 @@ import (
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -180,15 +181,28 @@ func deploy(packageName string, repositoryName string, repositoryURL string) (*r
 	p := getter.All(settings)
 	actionConfig := new(action.Configuration)
 	actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "", func(_ string, _ ...interface{}) {})
-	r, err := repo.NewChartRepository(&repo.Entry{
+	c := repo.Entry{
 		Name: repositoryName,
 		URL:  repositoryURL,
-	}, p)
+	}
+	r, err := repo.NewChartRepository(&c, p)
 	if err != nil {
 		return nil, err
 	}
 	index, err := r.DownloadIndexFile()
 	if err != nil {
+		return nil, err
+	}
+	b, err := os.ReadFile(settings.RepositoryConfig)
+	if err != nil {
+		return nil, err
+	}
+	var re repo.File
+	if err := yaml.Unmarshal(b, &re); err != nil {
+		return nil, err
+	}
+	re.Update(&c)
+	if err := re.WriteFile(settings.RepositoryConfig, 0600); err != nil {
 		return nil, err
 	}
 	if _, err := repo.LoadIndexFile(index); err != nil {
