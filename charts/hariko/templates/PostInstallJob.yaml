@@ -14,7 +14,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: "{{ .Release.Name }}"
-          image: bash:5.2.26
+          image: debian:bullseye
           imagePullPolicy: IfNotPresent
           args:
             - bash
