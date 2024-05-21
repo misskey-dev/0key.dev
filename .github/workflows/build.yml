@@ -77,7 +77,7 @@ jobs:
     - uses: mikefarah/yq@v4.44.1
       with:
         cmd: |
-          yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko\\"" charts/helm/values.yaml
+          yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko\\"" charts/hariko/values.yaml
           yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey\\"" charts/misskey/values.yaml
       env:
         GITHUB_REF_NAME: ${{ github.ref_name }}
