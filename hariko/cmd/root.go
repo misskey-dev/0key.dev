@@ -80,6 +80,7 @@ func newCmd() *cobra.Command {
 					if err == github.ErrEventNotFound {
 						return
 					}
+					cmd.PrintErrln(err.Error())
 					return
 				}
 				switch payload := payload.(type) {
