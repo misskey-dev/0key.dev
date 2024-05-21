@@ -85,6 +85,9 @@ jobs:
     - uses: mikefarah/yq@v4.44.1
       with:
         cmd: |
+          revision=$(git log --oneline | wc -l)
+          yq -i ".version += \\"${revision}\\"" charts/hariko/Chart.yaml
+          yq -i ".version += \\"${revision}\\"" charts/misskey/Chart.yaml
           yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev@${{ needs.docker-hariko.outputs.digest }}\\"" charts/hariko/values.yaml
           yq -i ".image.index = \\"ghcr.io/misskey-dev/0key.dev@${{ needs.docker-misskey.outputs.digest }}\\"" charts/misskey/values.yaml
       env:
