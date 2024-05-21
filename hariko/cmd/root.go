@@ -86,15 +86,19 @@ func newCmd() *cobra.Command {
 				switch payload := payload.(type) {
 				case github.WorkflowJobPayload:
 					if payload.Repository.FullName != githubRepository {
+						cmd.PrintErrf("unsupported repository: %s\n", payload.Repository.FullName)
 						return
 					}
 					if payload.WorkflowJob.Name != githubJobName {
+						cmd.PrintErrf("unsupported job: %s\n", payload.WorkflowJob.Name)
 						return
 					}
 					if payload.WorkflowJob.Status != "completed" {
+						cmd.PrintErrf("unsupported status: %s\n", payload.WorkflowJob.Status)
 						return
 					}
 					if payload.WorkflowJob.Conclusion != "success" {
+						cmd.PrintErrf("unsupported conclusion: %s\n", payload.WorkflowJob.Conclusion)
 						return
 					}
 					st := discord(&discordgo.WebhookParams{
@@ -142,6 +146,8 @@ func newCmd() *cobra.Command {
 							},
 						},
 					}, st)
+				default:
+					cmd.PrintErrf("unsupported payload type: %T\n", payload)
 				}
 			})
 			return http.ListenAndServe(":3000", nil)
