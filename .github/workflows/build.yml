@@ -4,6 +4,11 @@ on:
   push:
     branches:
     - master
+    paths-ignore:
+    - '.github/**'
+    - '.editorconfig'
+    - '.gitignore'
+    - '**/*.md'
 
 jobs:
   docker-hariko:
