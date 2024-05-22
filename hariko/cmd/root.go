@@ -232,6 +232,9 @@ func deploy(packageName string, repositoryName string, repositoryURL string, log
 		if err != nil {
 			return nil, err
 		}
+		if releases == nil {
+			log.Write([]byte("no releases found\n"))
+		}
 		for _, release := range releases {
 			data, err := json.Marshal(release)
 			if err != nil {
