@@ -123,7 +123,7 @@ func newCmd() *cobra.Command {
 						},
 					}, nil)
 					b := new(bytes.Buffer)
-					release, err := deploy(packageName, repositoryName, repositoryURL, b)
+					release, err := deploy(namespace, packageName, repositoryName, repositoryURL, b)
 					if err != nil {
 						discord(&discordgo.WebhookParams{
 							Embeds: []*discordgo.MessageEmbed{
@@ -229,7 +229,7 @@ func (r RESTClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
 	return &clientcmd.DefaultClientConfig
 }
 
-func deploy(packageName string, repositoryName string, repositoryURL string, log io.Writer) (*release.Release, error) {
+func deploy(namespace string, packageName string, repositoryName string, repositoryURL string, log io.Writer) (*release.Release, error) {
 	p := getter.All(settings)
 	c := repo.Entry{
 		Name: repositoryName,
@@ -263,11 +263,11 @@ func deploy(packageName string, repositoryName string, repositoryURL string, log
 		return nil, err
 	}
 	actionConfig := new(action.Configuration)
-	actionConfig.Init(RESTClientGetter{}, settings.Namespace(), "configmap", func(format string, v ...interface{}) {
+	actionConfig.Init(RESTClientGetter{}, namespace, "configmap", func(format string, v ...interface{}) {
 		fmt.Fprintf(log, format+"\n", v...)
 	})
 	client := action.NewUpgrade(actionConfig)
-	client.Namespace = settings.Namespace()
+	client.Namespace = namespace
 	chartPath, err := client.LocateChart(repositoryName+"/"+packageName, settings)
 	if err != nil {
 		return nil, err
