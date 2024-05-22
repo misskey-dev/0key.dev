@@ -158,6 +158,14 @@ func Execute() {
 }
 
 func deploy(namespace string, packageName string, repositoryName string, repositoryURL string, log io.Writer) error {
+	os.Setenv("HELM_DRIVER", "configmap")
+	os.Setenv("HELM_KUBEAPISERVER", "https://kubernetes.default.svc")
+	os.Setenv("HELM_KUBECAFILE", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		return err
+	}
+	os.Setenv("HELM_KUBETOKEN", string(token))
 	if err := run(exec.Command("helm", "repo", "add", "-n", namespace, repositoryName, repositoryURL), log); err != nil {
 		return err
 	}
@@ -171,7 +179,6 @@ func deploy(namespace string, packageName string, repositoryName string, reposit
 }
 
 func run(cmd *exec.Cmd, log io.Writer) error {
-	cmd.Env = append(cmd.Env, "HELM_DRIVER=configmap")
 	cmd.Stdout = log
 	cmd.Stderr = log
 	return cmd.Run()
