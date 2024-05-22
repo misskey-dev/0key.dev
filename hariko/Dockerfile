@@ -9,6 +9,6 @@ FROM alpine:3.19.1
 COPY --from=builder /app/hariko /
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 RUN export HELM_DRIVER=configmap \
- && apk add --no-cache bash=~5.2.26 curl=~8.7.1 openssl=~3.3.0 \
+ && apk add --no-cache bash=~5.2.21 curl=~8.5.0 openssl=~3.1.5 \
  && curl -LSfs https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ENTRYPOINT ["/hariko"]
