@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,7 +19,13 @@ import (
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/repo"
-	"helm.sh/helm/v3/pkg/storage/driver"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/discovery/cached/memory"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/yaml"
 )
 
@@ -188,6 +193,42 @@ func Execute() {
 	}
 }
 
+type RESTClientGetter struct {
+	genericclioptions.RESTClientGetter
+}
+
+func (r RESTClientGetter) ToRESTConfig() (*rest.Config, error) {
+	return rest.InClusterConfig()
+}
+
+func (r RESTClientGetter) ToDiscoveryClient() (discovery.CachedDiscoveryInterface, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	client, err := discovery.NewDiscoveryClientForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return memory.NewMemCacheClient(client), nil
+}
+
+func (r RESTClientGetter) ToRESTMapper() (meta.RESTMapper, error) {
+	client, err := r.ToDiscoveryClient()
+	if err != nil {
+		return nil, err
+	}
+	resources, err := restmapper.GetAPIGroupResources(client)
+	if err != nil {
+		return nil, err
+	}
+	return restmapper.NewDiscoveryRESTMapper(resources), nil
+}
+
+func (r RESTClientGetter) ToRawKubeConfigLoader() clientcmd.ClientConfig {
+	return &clientcmd.DefaultClientConfig
+}
+
 func deploy(packageName string, repositoryName string, repositoryURL string, log io.Writer) (*release.Release, error) {
 	p := getter.All(settings)
 	c := repo.Entry{
@@ -222,30 +263,9 @@ func deploy(packageName string, repositoryName string, repositoryURL string, log
 		return nil, err
 	}
 	actionConfig := new(action.Configuration)
-	actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "configmap", func(format string, v ...interface{}) {
+	actionConfig.Init(RESTClientGetter{}, settings.Namespace(), "configmap", func(format string, v ...interface{}) {
 		fmt.Fprintf(log, format+"\n", v...)
 	})
-	if _, ok := actionConfig.Releases.Driver.(*driver.Memory); ok {
-		return nil, fmt.Errorf("storage driver could not be initialized")
-	} else {
-		releases, err := actionConfig.Releases.Driver.List(func(_ *release.Release) bool { return true })
-		if err != nil {
-			return nil, err
-		}
-		if releases == nil {
-			log.Write([]byte("no releases found\n"))
-		}
-		for _, release := range releases {
-			data, err := json.Marshal(release)
-			if err != nil {
-				log.Write([]byte(fmt.Sprintf("failed to marshal release: %s\n", err.Error())))
-			} else {
-				log.Write([]byte("detected release: "))
-				log.Write(data)
-				log.Write([]byte("\n"))
-			}
-		}
-	}
 	client := action.NewUpgrade(actionConfig)
 	client.Namespace = settings.Namespace()
 	chartPath, err := client.LocateChart(repositoryName+"/"+packageName, settings)
