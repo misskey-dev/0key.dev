@@ -171,6 +171,7 @@ func deploy(namespace string, packageName string, repositoryName string, reposit
 }
 
 func run(cmd *exec.Cmd, log io.Writer) error {
+	cmd.Env = append(cmd.Env, "HELM_DRIVER=configmap")
 	cmd.Stdout = log
 	cmd.Stderr = log
 	return cmd.Run()
