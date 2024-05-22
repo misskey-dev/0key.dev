@@ -167,6 +167,7 @@ func deploy(namespace string, packageName string, repositoryName string, reposit
 	if err := run(exec.Command("helm", "upgrade", "-n", namespace, packageName, repositoryName+"/"+packageName), log); err != nil {
 		return err
 	}
+	return nil
 }
 
 func run(cmd *exec.Cmd, log io.Writer) error {
