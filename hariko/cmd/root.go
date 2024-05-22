@@ -2,34 +2,21 @@ package cmd
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strconv"
+	"os/exec"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-playground/webhooks/v6/github"
 	"github.com/spf13/cobra"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/cli"
-	"helm.sh/helm/v3/pkg/getter"
-	"helm.sh/helm/v3/pkg/release"
-	"helm.sh/helm/v3/pkg/repo"
-	"helm.sh/helm/v3/pkg/storage/driver"
-	"sigs.k8s.io/yaml"
 )
 
 const (
 	ColorSuccess = 0x3fb950
 	ColorFailure = 0xf85149
 )
-
-var settings = cli.New()
 
 func newCmd() *cobra.Command {
 	var discordWebhookIDToken string
@@ -46,7 +33,6 @@ func newCmd() *cobra.Command {
 		Long:  "Hariko watches the GitHub repository and automatically deploys the application to the server.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			settings.SetNamespace(namespace)
 			hook, err := github.New(github.Options.Secret(githubWebhookSecret))
 			if err != nil {
 				return err
@@ -118,7 +104,7 @@ func newCmd() *cobra.Command {
 						},
 					}, nil)
 					b := new(bytes.Buffer)
-					release, err := deploy(packageName, repositoryName, repositoryURL, b)
+					err := deploy(namespace, packageName, repositoryName, repositoryURL, b)
 					if err != nil {
 						discord(&discordgo.WebhookParams{
 							Embeds: []*discordgo.MessageEmbed{
@@ -137,23 +123,6 @@ func newCmd() *cobra.Command {
 								Title:       "Deployment succeeded",
 								Color:       ColorSuccess,
 								Description: "```\n" + b.String() + "```",
-								Fields: []*discordgo.MessageEmbedField{
-									{
-										Name:   "Name",
-										Value:  release.Name,
-										Inline: true,
-									},
-									{
-										Name:   "Namespace",
-										Value:  release.Namespace,
-										Inline: true,
-									},
-									{
-										Name:   "Revision",
-										Value:  strconv.Itoa(release.Version),
-										Inline: true,
-									},
-								},
 							},
 						},
 					}, st)
@@ -188,73 +157,20 @@ func Execute() {
 	}
 }
 
-func deploy(packageName string, repositoryName string, repositoryURL string, log io.Writer) (*release.Release, error) {
-	p := getter.All(settings)
-	c := repo.Entry{
-		Name: repositoryName,
-		URL:  repositoryURL,
+func deploy(namespace string, packageName string, repositoryName string, repositoryURL string, log io.Writer) error {
+	if err := run(exec.Command("helm", "repo", "add", "-n", namespace, repositoryName, repositoryURL), log); err != nil {
+		return err
 	}
-	r, err := repo.NewChartRepository(&c, p)
-	if err != nil {
-		return nil, err
+	if err := run(exec.Command("helm", "repo", "update"), log); err != nil {
+		return err
 	}
-	if settings.RepositoryCache != "" {
-		r.CachePath = settings.RepositoryCache
+	if err := run(exec.Command("helm", "upgrade", "-n", namespace, packageName, repositoryName+"/"+packageName), log); err != nil {
+		return err
 	}
-	index, err := r.DownloadIndexFile()
-	if err != nil {
-		return nil, err
-	}
-	b, _ := os.ReadFile(settings.RepositoryConfig)
-	re := repo.NewFile()
-	if b != nil {
-		yaml.Unmarshal(b, &re)
-	}
-	re.Update(&c)
-	err = os.MkdirAll(filepath.Dir(settings.RepositoryConfig), os.ModePerm)
-	if err != nil && !os.IsExist(err) {
-		return nil, err
-	}
-	if err := re.WriteFile(settings.RepositoryConfig, 0600); err != nil {
-		return nil, err
-	}
-	if _, err := repo.LoadIndexFile(index); err != nil {
-		return nil, err
-	}
-	actionConfig := new(action.Configuration)
-	actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "configmap", func(format string, v ...interface{}) {
-		fmt.Fprintf(log, format+"\n", v...)
-	})
-	if _, ok := actionConfig.Releases.Driver.(*driver.Memory); ok {
-		return nil, fmt.Errorf("storage driver could not be initialized")
-	} else {
-		releases, err := actionConfig.Releases.Driver.List(func(_ *release.Release) bool { return true })
-		if err != nil {
-			return nil, err
-		}
-		if releases == nil {
-			log.Write([]byte("no releases found\n"))
-		}
-		for _, release := range releases {
-			data, err := json.Marshal(release)
-			if err != nil {
-				log.Write([]byte(fmt.Sprintf("failed to marshal release: %s\n", err.Error())))
-			} else {
-				log.Write([]byte("detected release: "))
-				log.Write(data)
-				log.Write([]byte("\n"))
-			}
-		}
-	}
-	client := action.NewUpgrade(actionConfig)
-	client.Namespace = settings.Namespace()
-	chartPath, err := client.LocateChart(repositoryName+"/"+packageName, settings)
-	if err != nil {
-		return nil, err
-	}
-	ch, err := loader.Load(chartPath)
-	if err != nil {
-		return nil, err
-	}
-	return client.Run(repositoryName, ch, map[string]interface{}{})
+}
+
+func run(cmd *exec.Cmd, log io.Writer) error {
+	cmd.Stdout = log
+	cmd.Stderr = log
+	return cmd.Run()
 }
