@@ -23,7 +23,6 @@ func newCmd() *cobra.Command {
 	var githubJobName string
 	var githubRepository string
 	var githubWebhookSecret string
-	var namespace string
 	var packageName string
 	var repositoryName string
 	var repositoryURL string
@@ -104,7 +103,7 @@ func newCmd() *cobra.Command {
 						},
 					}, nil)
 					b := new(bytes.Buffer)
-					err := deploy(namespace, packageName, repositoryName, repositoryURL, b)
+					err := deploy(packageName, repositoryName, repositoryURL, b)
 					if err != nil {
 						discord(&discordgo.WebhookParams{
 							Embeds: []*discordgo.MessageEmbed{
@@ -138,7 +137,6 @@ func newCmd() *cobra.Command {
 	f.StringVarP(&githubJobName, "github-job-name", "j", "", "Job name")
 	f.StringVarP(&githubRepository, "github-repository", "g", "", "Repository")
 	f.StringVarP(&githubWebhookSecret, "github-webhook-secret", "s", "", "GitHub webhook secret")
-	f.StringVarP(&namespace, "namespace", "n", "", "Namespace")
 	f.StringVarP(&packageName, "package-name", "p", "", "Package name")
 	f.StringVarP(&repositoryName, "repository-name", "r", "", "Repository name")
 	f.StringVarP(&repositoryURL, "repository-url", "u", "", "Repository URL")
@@ -157,22 +155,19 @@ func Execute() {
 	}
 }
 
-func deploy(namespace string, packageName string, repositoryName string, repositoryURL string, log io.Writer) error {
+func deploy(packageName string, repositoryName string, repositoryURL string, log io.Writer) error {
 	os.Setenv("HELM_DRIVER", "configmap")
-	os.Setenv("HELM_KUBEAPISERVER", "https://kubernetes.default.svc")
-	os.Setenv("HELM_KUBECAFILE", "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	namespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
 		return err
 	}
-	os.Setenv("HELM_KUBETOKEN", string(token))
-	if err := run(exec.Command("helm", "repo", "add", "-n", namespace, repositoryName, repositoryURL), log); err != nil {
+	if err := run(exec.Command("helm", "repo", "add", "-n", string(namespace), repositoryName, repositoryURL), log); err != nil {
 		return err
 	}
 	if err := run(exec.Command("helm", "repo", "update"), log); err != nil {
 		return err
 	}
-	if err := run(exec.Command("helm", "upgrade", "-n", namespace, packageName, repositoryName+"/"+packageName), log); err != nil {
+	if err := run(exec.Command("helm", "upgrade", "-n", string(namespace), packageName, repositoryName+"/"+packageName), log); err != nil {
 		return err
 	}
 	return nil
