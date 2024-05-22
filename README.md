@@ -2,11 +2,13 @@
 
 misskey-dev staging environment
 
-## How to install
+This repository also contains the source code for Hariko (張り子), a GitHub Actions-based CI/CD tool for Misskey.
+
+## How to install Hariko for your Misskey server
 
 1. Setup PostgreSQL, Redis, and Meilisearch (optional) in your cluster
 2. Fork this repository and configure .github/workflows/\*.yml and charts/\*/values.yaml to fit your environment
-3. Create GitHub Webhook (subscribe `workflow_job`) and Discord Webhook
+3. Create GitHub Webhook (subscribe `workflow_job` required) and Discord Webhook (optional)
 4. Configure Hariko
 
 ```bash
@@ -33,7 +35,7 @@ helm update
 helm install hariko misskey-dev/hariko
 ```
 
-## How to update Misskey
+## How to update Misskey with Hariko
 
 1. Clone this repository to your local machine
 2. Update misskey submodule to the commit you want to update to
