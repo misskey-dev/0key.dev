@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -124,7 +125,7 @@ func newCmd() *cobra.Command {
 								{
 									Title:       "Deployment failed",
 									Color:       ColorFailure,
-									Description: err.Error() + "\n```" + b.String() + "```",
+									Description: err.Error() + "\n```\n" + b.String() + "```",
 								},
 							},
 						}, st)
@@ -135,7 +136,7 @@ func newCmd() *cobra.Command {
 							{
 								Title:       "Deployment succeeded",
 								Color:       ColorSuccess,
-								Description: "```" + b.String() + "```",
+								Description: "```\n" + b.String() + "```",
 								Fields: []*discordgo.MessageEmbedField{
 									{
 										Name:   "Name",
@@ -226,6 +227,21 @@ func deploy(packageName string, repositoryName string, repositoryURL string, log
 	})
 	if _, ok := actionConfig.Releases.Driver.(*driver.Memory); ok {
 		return nil, fmt.Errorf("storage driver could not be initialized")
+	} else {
+		releases, err := actionConfig.Releases.Driver.List(func(_ *release.Release) bool { return true })
+		if err != nil {
+			return nil, err
+		}
+		for _, release := range releases {
+			data, err := json.Marshal(release)
+			if err != nil {
+				log.Write([]byte(fmt.Sprintf("failed to marshal release: %s\n", err.Error())))
+			} else {
+				log.Write([]byte("detected release: "))
+				log.Write(data)
+				log.Write([]byte("\n"))
+			}
+		}
 	}
 	client := action.NewUpgrade(actionConfig)
 	client.Namespace = settings.Namespace()
