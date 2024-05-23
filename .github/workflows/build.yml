@@ -9,8 +9,39 @@ on:
     - '.editorconfig'
     - '.gitignore'
     - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      head:
+        default: develop
 
 jobs:
+  update:
+    if: github.repository == 'misskey-dev/0key.dev' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4.1.6
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+        submodules: recursive
+    - run: |
+        git branch -r --format '%(refname:short)' | while read r;
+          do git branch --track "${r#origin/}" "$r" || :;
+        done
+        git fetch --all || :
+        git pull --all --ff-only || :
+        git checkout "$HEAD"
+      env:
+        HEAD: ${{ github.event.inputs.head }}
+      working-directory: misskey
+    - run: |
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+        git add misskey
+        git commit -m "chore: update misskey to $(git rev-parse HEAD)"
+        git push
+      env:
+        HEAD: ${{ github.event.inputs.head }}
   docker-hariko:
     if: github.repository == 'misskey-dev/0key.dev'
     runs-on: ubuntu-latest
