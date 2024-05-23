@@ -60,7 +60,6 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - uses: crazy-max/ghaction-github-runtime@v3.0.0
     - id: build
       run: |
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko" .
@@ -88,7 +87,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
     - uses: Homebrew/actions/setup-homebrew@master
-    - uses: crazy-max/ghaction-github-runtime@v3.0.0
     - id: build
       run: |
         head=$(git rev-parse HEAD)
