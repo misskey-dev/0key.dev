@@ -41,6 +41,8 @@ helm install hariko misskey-dev/hariko
 2. Update misskey submodule to the commit you want to update to
 3. Commit and push the changes
 
+[GitHub Actions Workflow](https://github.com/misskey-dev/0key.dev/actions/workflows/build.yml) is also available.
+
 > [!IMPORTANT]
 > Care should be taken to ensure that database migration is a forward-compatible change. If it is not forward compatible, you will need to stop the service before updating.
 
