@@ -18,8 +18,8 @@ jobs:
         git branch -r --format '%(refname:short)' | while read r;
           do git branch --track "${r#origin/}" "$r" || :;
         done
-        git fetch --all
-        git pull --all
+        git fetch --all || :
+        git pull --all --ff-only || :
         git checkout "$HEAD"
       env:
         HEAD: ${{ github.event.inputs.head }}
