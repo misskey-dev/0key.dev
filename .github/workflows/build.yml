@@ -16,15 +16,17 @@ on:
 
 jobs:
   update:
-    if: github.repository == 'misskey-dev/0key.dev' && github.event_name == 'workflow_dispatch'
+    if: github.repository == 'misskey-dev/0key.dev'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4.1.6
+    - if: github.event_name == 'workflow_dispatch'
+      uses: actions/checkout@v4.1.6
       with:
         fetch-depth: 0
         fetch-tags: true
         submodules: recursive
-    - run: |
+    - if: github.event_name == 'workflow_dispatch'
+      run: |
         git branch -r --format '%(refname:short)' | while read r;
           do git branch --track "${r#origin/}" "$r" || :;
         done
@@ -34,7 +36,8 @@ jobs:
       env:
         HEAD: ${{ github.event.inputs.head }}
       working-directory: misskey
-    - run: |
+    - if: github.event_name == 'workflow_dispatch'
+      run: |
         git config user.name "$GITHUB_ACTOR"
         git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
         git add misskey
@@ -44,6 +47,8 @@ jobs:
         HEAD: ${{ github.event.inputs.head }}
   docker-hariko:
     if: github.repository == 'misskey-dev/0key.dev'
+    needs:
+    - update
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -59,7 +64,7 @@ jobs:
     - uses: crazy-max/ghaction-github-runtime@v3.0.0
     - id: build
       run: |
-        docker build--cache-from type=gha,scope=hariko --cache-to type=gha,scope=hariko,mode=max -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko" .
+        docker build --cache-from type=gha,scope=hariko --cache-to type=gha,scope=hariko,mode=max -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko"
         echo "digest=$(docker image ls --format '{{.Digest}}' | head -n1)" > $GITHUB_OUTPUT
       working-directory: hariko
@@ -67,6 +72,8 @@ jobs:
         GITHUB_REF_NAME: ${{ github.ref_name }}
   docker-misskey:
     if: github.repository == 'misskey-dev/0key.dev'
+    needs:
+    - update
     runs-on: ubuntu-latest
     permissions:
       packages: write
