@@ -58,6 +58,7 @@ jobs:
     - if: github.event_name == 'workflow_dispatch'
       run: |
         git pull --ff-only
+        git submodule update
     - uses: docker/login-action@v3.1.0
       with:
         registry: ghcr.io
@@ -87,6 +88,7 @@ jobs:
     - if: github.event_name == 'workflow_dispatch'
       run: |
         git pull --ff-only
+        git submodule update
     - uses: docker/login-action@v3.1.0
       with:
         registry: ghcr.io
@@ -125,6 +127,7 @@ jobs:
     - if: github.event_name == 'workflow_dispatch'
       run: |
         git pull --ff-only
+        git submodule update
     - id: version
       run: |
         git config user.name "$GITHUB_ACTOR"
