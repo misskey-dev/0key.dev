@@ -63,7 +63,7 @@ jobs:
     - uses: crazy-max/ghaction-github-runtime@v3.0.0
     - id: build
       run: |
-        docker build --cache-from type=gha,scope=hariko --cache-to type=gha,scope=hariko,mode=max -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko" .
+        docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-hariko"
         echo "digest=$(docker image ls --format '{{.Digest}}' | head -n1)" > $GITHUB_OUTPUT
       working-directory: hariko
@@ -100,7 +100,7 @@ jobs:
         git checkout FETCH_HEAD
         brew install jaq
         jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json
-        docker build --cache-from type=gha,scope=misskey --cache-to type=gha,scope=misskey,mode=max -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
+        docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
         echo "digest=$(docker image ls --format '{{.Digest}}' | head -n1)" > $GITHUB_OUTPUT
       working-directory: misskey
