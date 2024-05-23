@@ -67,3 +67,8 @@ spec:
         - name: {{ include "misskey.name" . }}-configuration
           configMap:
             name: {{ include "misskey.name" . }}-configuration
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 99%
+      maxSurge: 0
