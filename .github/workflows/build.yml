@@ -94,7 +94,7 @@ jobs:
         cd $repository
         git init
         git remote add origin https://github.com/misskey-dev/misskey.git
-        git fetch --depth=1 origin $head
+        git fetch origin $head
         git checkout FETCH_HEAD
         brew install jaq
         jaq --in-place ".version += \"-commit.$(git log --oneline | wc -l)+$(git rev-parse HEAD)\"" package.json
