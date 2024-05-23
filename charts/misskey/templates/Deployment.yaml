@@ -71,4 +71,4 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 99%
-      maxSurge: 0
+      maxSurge: 1
