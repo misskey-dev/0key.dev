@@ -45,7 +45,7 @@ helm install hariko misskey-dev/hariko
 > Care should be taken to ensure that database migration is a forward-compatible change. If it is not forward compatible, you will need to stop the service before updating.
 
 > [!WARNING]
-> Automatic rollback with database rebasing is not supported. You need to manually rollback the database if you want to rollback the Misskey version.
+> Automatic rollback with reverting database migration is not supported. You need to manually revert the database migration if you want to rollback the Misskey version.
 
 ## License
 
