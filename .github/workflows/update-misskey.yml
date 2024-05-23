@@ -12,7 +12,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4.1.6
       with:
-        depth: 0
+        fetch-depth: 0
+        fetch-tags: true
         submodules: recursive
     - run: |
         git branch -r --format '%(refname:short)' | while read r;
