@@ -97,7 +97,7 @@ jobs:
         git fetch --depth=1 origin $head
         git checkout FETCH_HEAD
         brew install jaq
-        jaq --in-place ".version += \"-$(git rev-parse --abbrev-ref HEAD).$(git rev-parse HEAD)\"" package.json
+        jaq --in-place ".version += \"-commit.$(git log --oneline | wc -l)+$(git rev-parse HEAD)\"" package.json
         docker build -t "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey" .
         docker push "ghcr.io/misskey-dev/0key.dev:$GITHUB_REF_NAME-misskey"
         echo "digest=$(docker image ls --format '{{.Digest}}' | head -n1)" > $GITHUB_OUTPUT
