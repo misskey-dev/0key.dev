@@ -13,6 +13,8 @@ redis:
   family: 0
 misskey:
   id: aidx
+  sentryForBackend:
+    enableNodeProfiling: true
   proxyBypassHosts:
     - challenges.cloudflare.com
   proxyRemoteFiles: true

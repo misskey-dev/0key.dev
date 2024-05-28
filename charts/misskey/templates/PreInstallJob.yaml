@@ -12,24 +12,7 @@ spec:
       name: "{{ .Release.Name }}"
     spec:
       restartPolicy: Never
-      initContainers:
-        - name: "{{ .Release.Name }}-init"
-          image: mikefarah/yq:4
-          imagePullPolicy: Always
-          command: ["/bin/sh"]
-          args: ["-c", "cp /mnt/misskey-configuration/default.yml /misskey/.config && /usr/bin/yq -i \".db.pass = \\\"$POSTGRESQL_PASS\\\"\" /misskey/.config/default.yml"]
-          env:
-            - name: POSTGRESQL_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: postgresql-ha-postgresql
-                  key: password
-          volumeMounts:
-            - name: {{ include "misskey.name" . }}-configuration-destination
-              mountPath: /misskey/.config
-            - name: {{ include "misskey.name" . }}-configuration
-              mountPath: /mnt/misskey-configuration
-              readOnly: true
+      initContainers: {{ include "misskey.initContainers" . | nindent 8 }}
       containers:
         - name: "{{ .Release.Name }}"
           image: "{{ .Values.image.index }}"
@@ -45,9 +28,4 @@ spec:
           image: public.ecr.aws/docker/library/redis:7.2.4-alpine
           command: ["/usr/local/bin/redis-cli"]
           args: ["-h", "{{ .Values.redis.host }}",{{ if .Values.redis.port }} "-p", "{{ .Values.redis.port }}",{{ end }} "CONFIG", "SET", "maxmemory-policy", "noeviction"]
-      volumes:
-        - name: {{ include "misskey.name" . }}-configuration-destination
-          emptyDir: {}
-        - name: {{ include "misskey.name" . }}-configuration
-          configMap:
-            name: {{ include "misskey.name" . }}-configuration
+      volumes: {{ include "misskey.volumes" . | nindent 8 }}

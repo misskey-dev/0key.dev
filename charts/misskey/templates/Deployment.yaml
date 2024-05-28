@@ -14,24 +14,7 @@ spec:
       labels:
         app: {{ include "misskey.name" . }}
     spec:
-      initContainers:
-        - name: "{{ .Release.Name }}-init"
-          image: mikefarah/yq:4
-          imagePullPolicy: Always
-          command: ["/bin/sh"]
-          args: ["-c", "cp /mnt/misskey-configuration/default.yml /misskey/.config && /usr/bin/yq -i \".db.pass = \\\"$POSTGRESQL_PASS\\\"\" /misskey/.config/default.yml"]
-          env:
-            - name: POSTGRESQL_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: postgresql-ha-postgresql
-                  key: password
-          volumeMounts:
-            - name: {{ include "misskey.name" . }}-configuration-destination
-              mountPath: /misskey/.config
-            - name: {{ include "misskey.name" . }}-configuration
-              mountPath: /mnt/misskey-configuration
-              readOnly: true
+      initContainers: {{ include "misskey.initContainers" . | nindent 8 }}
       containers:
         - name: {{ include "misskey.name" . }}
           image: "{{ .Values.image.index }}"
@@ -61,12 +44,7 @@ spec:
               port: {{ .Values.port }}
             failureThreshold: 30
             periodSeconds: 1
-      volumes:
-        - name: {{ include "misskey.name" . }}-configuration-destination
-          emptyDir: {}
-        - name: {{ include "misskey.name" . }}-configuration
-          configMap:
-            name: {{ include "misskey.name" . }}-configuration
+      volumes: {{ include "misskey.volumes" . | nindent 8 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
