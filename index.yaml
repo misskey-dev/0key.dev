@@ -2,6 +2,13 @@ apiVersion: v1
 entries:
   hariko:
   - apiVersion: v2
+    created: "2025-03-11T05:59:10.692804326Z"
+    digest: c5e029908b6bfba1a93e6ea1032393ca14b4888538dd4c1c324905aac2304add
+    name: hariko
+    urls:
+    - https://github.com/misskey-dev/0key.dev/releases/download/hariko-0.3.176/hariko-0.3.176.tgz
+    version: 0.3.176
+  - apiVersion: v2
     created: "2025-03-11T02:25:42.775706431Z"
     digest: 02194d6536b47dc1062c54b4cd8dcb24e8def545bd1366b7b5561476604f8a85
     name: hariko
@@ -731,6 +738,13 @@ entries:
     version: 0.1.0
   misskey:
   - apiVersion: v2
+    created: "2025-03-11T05:59:10.797593994Z"
+    digest: f3f03f355399c605c1d9b37bf8aa3d897dbdf4a32c0e2b4f200fcd1e27ffca01
+    name: misskey
+    urls:
+    - https://github.com/misskey-dev/0key.dev/releases/download/misskey-0.3.176/misskey-0.3.176.tgz
+    version: 0.3.176
+  - apiVersion: v2
     created: "2025-03-11T02:25:42.893868917Z"
     digest: 7aa1b0bfff774f4a403bfb87beadf8d1ef2b105a0ea6c0447ebddd1f51f05b70
     name: misskey
@@ -1458,4 +1472,4 @@ entries:
     urls:
     - https://github.com/misskey-dev/0key.dev/releases/download/misskey-0.1.0/misskey-0.1.0.tgz
     version: 0.1.0
-generated: "2025-03-11T02:25:42.894402919Z"
+generated: "2025-03-11T05:59:10.798360626Z"
